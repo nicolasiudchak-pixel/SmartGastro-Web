@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{% if producto %}Editar{% else %}Nuevo{% endif %} Producto — SmartGastro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if producto %}Editar Producto{% else %}Nuevo Producto{% endif %}</h2>
+    <a href="{{ url_for('productos.index') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div class="form-card">
+    <form method="POST">
+        <div class="form-group">
+            <label for="nombre">Nombre *</label>
+            <input type="text" id="nombre" name="nombre" class="form-control"
+                   value="{{ producto.nombre if producto else '' }}" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="precio">Precio ($) *</label>
+                <input type="number" id="precio" name="precio" class="form-control"
+                       step="0.01" min="0" value="{{ producto.precio if producto else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label for="stock">Stock inicial *</label>
+                <input type="number" id="stock" name="stock" class="form-control"
+                       min="0" value="{{ producto.stock if producto else 0 }}" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" name="categoria" class="form-control">
+                {% set cats = ["Comida", "Bebida", "Snack", "Postre", "Combo", "General"] %}
+                {% for cat in cats %}
+                <option value="{{ cat }}" {% if producto and producto.categoria == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-actions">
+            <a href="{{ url_for('productos.index') }}" class="btn btn-outline">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if producto %}Guardar cambios{% else %}Crear producto{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
