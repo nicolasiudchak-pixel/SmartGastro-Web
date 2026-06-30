@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — SmartGastro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p class="text-muted">Bienvenido, {{ session.user_nombre }}</p>
+</div>
+
+{% if clima %}
+<div class="clima-card {% if clima.lluvia %}clima-alerta{% else %}clima-ok{% endif %}">
+    <div class="clima-icon">
+        <img src="https://openweathermap.org/img/wn/{{ clima.icono }}@2x.png" alt="{{ clima.descripcion }}">
+    </div>
+    <div class="clima-info">
+        <h3>{{ clima.ciudad }} — {{ clima.temperatura }}°C</h3>
+        <p>{{ clima.descripcion }}</p>
+        {% if clima.lluvia %}
+        <div class="alerta-lluvia">
+            ⚠️ <strong>Alerta de lluvia:</strong> Se recomienda reducir la producción de stock para los foodtrucks de hoy.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="clima-card clima-sin-datos">
+    <p>⚠️ No se pudo obtener el clima. Verificá la clave de API en el archivo <code>.env</code>.</p>
+</div>
+{% endif %}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_productos }}</div>
+        <div class="stat-label">Productos</div>
+        <a href="{{ url_for('productos.index') }}" class="stat-link">Ver inventario →</a>
+    </div>
+    <div class="stat-card {% if productos_bajo_stock > 0 %}stat-warning{% endif %}">
+        <div class="stat-value">{{ productos_bajo_stock }}</div>
+        <div class="stat-label">Bajo stock (&lt;5)</div>
+        <a href="{{ url_for('productos.index') }}" class="stat-link">Ver productos →</a>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_clientes }}</div>
+        <div class="stat-label">Clientes</div>
+        <a href="{{ url_for('clientes.index') }}" class="stat-link">Ver clientes →</a>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ total_ventas }}</div>
+        <div class="stat-label">Ventas totales</div>
+        <a href="{{ url_for('ventas.index') }}" class="stat-link">Ver ventas →</a>
+    </div>
+</div>
+
+<div class="section">
+    <div class="section-header">
+        <h3>Últimas ventas</h3>
+        <a href="{{ url_for('ventas.nueva') }}" class="btn btn-primary">+ Nueva venta</a>
+    </div>
+    {% if ventas_recientes %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Cajero</th>
+                <th>Total</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in ventas_recientes %}
+            <tr>
+                <td>{{ v.id }}</td>
+                <td>{{ v.cliente.nombre }}</td>
+                <td>{{ v.cajero.nombre }}</td>
+                <td>${{ "%.2f"|format(v.total) }}</td>
+                <td>{{ v.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">Todavía no hay ventas registradas.</p>
+    {% endif %}
+</div>
+{% endblock %}

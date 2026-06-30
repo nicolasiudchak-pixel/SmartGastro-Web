@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartGastro{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if session.user_id %}
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">🍔</span>
+            <span class="brand-name">SmartGastro</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('productos.index') }}" class="nav-link {% if request.blueprint == 'productos' %}active{% endif %}">Productos</a>
+            <a href="{{ url_for('clientes.index') }}" class="nav-link {% if request.blueprint == 'clientes' %}active{% endif %}">Clientes</a>
+            <a href="{{ url_for('ventas.index') }}" class="nav-link {% if request.blueprint == 'ventas' %}active{% endif %}">Ventas</a>
+        </div>
+        <div class="nav-user">
+            <span class="user-name">{{ session.user_nombre }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline">Salir</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
