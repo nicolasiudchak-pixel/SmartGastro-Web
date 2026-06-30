@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{% if cliente %}Editar{% else %}Nuevo{% endif %} Cliente — SmartGastro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if cliente %}Editar Cliente{% else %}Nuevo Cliente{% endif %}</h2>
+    <a href="{{ url_for('clientes.index') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div class="form-card">
+    <form method="POST">
+        <div class="form-group">
+            <label for="nombre">Nombre *</label>
+            <input type="text" id="nombre" name="nombre" class="form-control"
+                   value="{{ cliente.nombre if cliente else '' }}" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" name="telefono" class="form-control"
+                       value="{{ cliente.telefono if cliente else '' }}">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control"
+                       value="{{ cliente.email if cliente else '' }}">
+            </div>
+        </div>
+        <div class="form-actions">
+            <a href="{{ url_for('clientes.index') }}" class="btn btn-outline">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if cliente %}Guardar cambios{% else %}Registrar cliente{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
