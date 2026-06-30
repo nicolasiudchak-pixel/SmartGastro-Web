@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Venta — SmartGastro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Registrar Nueva Venta</h2>
+    <a href="{{ url_for('ventas.index') }}" class="btn btn-outline">← Volver</a>
+</div>
+
+<div class="form-card">
+    <div class="form-group">
+        <label for="cliente_id">Cliente *</label>
+        <select id="cliente_id" class="form-control" required>
+            <option value="">— Seleccioná un cliente —</option>
+            {% for c in clientes %}
+            <option value="{{ c.id }}">{{ c.nombre }}</option>
+            {% endfor %}
+        </select>
+        {% if not clientes %}
+        <p class="form-hint">No hay clientes. <a href="{{ url_for('clientes.nuevo') }}">Crear uno</a>.</p>
+        {% endif %}
+    </div>
+
+    <div class="section">
+        <h3>Productos</h3>
+        <div id="items-container">
+            <div class="item-row" data-index="0">
+                <select name="producto_id" class="form-control producto-select">
+                    <option value="">— Producto —</option>
+                    {% for p in productos %}
+                    <option value="{{ p.id }}" data-precio="{{ p.precio }}" data-stock="{{ p.stock }}">
+                        {{ p.nombre }} (${{ "%.2f"|format(p.precio) }}) — Stock: {{ p.stock }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="cantidad" class="form-control cantidad-input" min="1" value="1" placeholder="Cant.">
+                <span class="item-subtotal">$0.00</span>
+                <button type="button" class="btn btn-sm btn-danger btn-remove" onclick="removeItem(this)">✕</button>
+            </div>
+        </div>
+        {% if not productos %}
+        <p class="form-hint">No hay productos con stock disponible. <a href="{{ url_for('productos.nuevo') }}">Agregar producto</a>.</p>
+        {% endif %}
+        <button type="button" class="btn btn-outline btn-sm" onclick="addItem()" style="margin-top:0.5rem">+ Agregar producto</button>
+    </div>
+
+    <div class="total-row">
+        <strong>Total:</strong> <span id="total-display">$0.00</span>
+    </div>
+
+    <div id="venta-resultado" class="alert" style="display:none"></div>
+
+    <div class="form-actions">
+        <a href="{{ url_for('ventas.index') }}" class="btn btn-outline">Cancelar</a>
+        <button type="button" id="btn-registrar" class="btn btn-primary" onclick="registrarVenta()">Registrar venta</button>
+    </div>
+</div>
+
+<script>
+    const productosData = {{ productos | tojson }};
+
+    function calcularTotal() {
+        let total = 0;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const select = row.querySelector('.producto-select');
+            const cantidad = parseInt(row.querySelector('.cantidad-input').value) || 0;
+            const option = select.options[select.selectedIndex];
+            const precio = option ? parseFloat(option.dataset.precio || 0) : 0;
+            const subtotal = precio * cantidad;
+            row.querySelector('.item-subtotal').textContent = '$' + subtotal.toFixed(2);
+            total += subtotal;
+        });
+        document.getElementById('total-display').textContent = '$' + total.toFixed(2);
+    }
+
+    function addItem() {
+        const container = document.getElementById('items-container');
+        const index = container.children.length;
+        const firstRow = container.querySelector('.item-row');
+        const newRow = firstRow.cloneNode(true);
+        newRow.dataset.index = index;
+        newRow.querySelector('.producto-select').value = '';
+        newRow.querySelector('.cantidad-input').value = 1;
+        newRow.querySelector('.item-subtotal').textContent = '$0.00';
+        newRow.querySelectorAll('select, input').forEach(el => {
+            el.addEventListener('change', calcularTotal);
+            el.addEventListener('input', calcularTotal);
+        });
+        container.appendChild(newRow);
+    }
+
+    function removeItem(btn) {
+        const container = document.getElementById('items-container');
+        if (container.children.length === 1) return;
+        btn.closest('.item-row').remove();
+        calcularTotal();
+    }
+
+    document.querySelectorAll('.producto-select, .cantidad-input').forEach(el => {
+        el.addEventListener('change', calcularTotal);
+        el.addEventListener('input', calcularTotal);
+    });
+
+    async function registrarVenta() {
+        const clienteId = document.getElementById('cliente_id').value;
+        if (!clienteId) {
+            mostrarResultado('Seleccioná un cliente.', 'danger');
+            return;
+        }
+
+        const items = [];
+        let valido = true;
+        document.querySelectorAll('.item-row').forEach(row => {
+            const productoId = row.querySelector('.producto-select').value;
+            const cantidad = parseInt(row.querySelector('.cantidad-input').value);
+            if (productoId && cantidad > 0) {
+                items.push({ producto_id: parseInt(productoId), cantidad });
+            } else if (productoId || cantidad > 1) {
+                valido = false;
+            }
+        });
+
+        if (!valido || items.length === 0) {
+            mostrarResultado('Seleccioná al menos un producto con cantidad válida.', 'danger');
+            return;
+        }
+
+        const btn = document.getElementById('btn-registrar');
+        btn.disabled = true;
+        btn.textContent = 'Registrando...';
+
+        try {
+            const response = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente_id: parseInt(clienteId), items })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                mostrarResultado('✅ ' + data.mensaje, 'success');
+                setTimeout(() => window.location.href = '/ventas/', 1500);
+            } else {
+                mostrarResultado('❌ ' + data.error, 'danger');
+                btn.disabled = false;
+                btn.textContent = 'Registrar venta';
+            }
+        } catch (e) {
+            mostrarResultado('❌ Error de conexión con el servidor.', 'danger');
+            btn.disabled = false;
+            btn.textContent = 'Registrar venta';
+        }
+    }
+
+    function mostrarResultado(msg, tipo) {
+        const el = document.getElementById('venta-resultado');
+        el.className = 'alert alert-' + tipo;
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+</script>
+{% endblock %}
